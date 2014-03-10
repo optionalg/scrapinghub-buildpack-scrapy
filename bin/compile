@@ -153,6 +153,9 @@ source $BIN_DIR/steps/python
 # Sanity check for setuptools/distribute.
 source $BIN_DIR/steps/setuptools
 
+# Scrapinghub support
+source $BIN_DIR/steps/scrapinghub
+
 # Uninstall removed dependencies with Pip.
 source $BIN_DIR/steps/pip-uninstall
 

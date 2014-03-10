@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+bpwatch start sh_scrapy_install
+
+puts-step "Scrapinghub support"
+
+# Force libffi install
+pip-grep -s requirements.txt cffi &>/dev/null \
+  ||echo cffi >>requirements.txt
+
+# Require scrapinghub wrapper for scrapy spiders
+pip-grep -s requirements.txt sh_scrapy &>/dev/null \
+  ||echo $ROOT_DIR/vendor/sh_scrapy >>requirements.txt
+
+bpwatch stop sh_scrapy_install

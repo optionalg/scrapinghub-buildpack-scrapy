@@ -17,6 +17,8 @@ BUILD_DIR=$1
 # Exit early if app is clearly not Scrapy
 if [[ -f scrapy.cfg ]]; then
   echo Scrapy
+elif [[ -f __main__.egg ]]; then
+  echo Scrapy-egg
 else
   exit 1
 fi

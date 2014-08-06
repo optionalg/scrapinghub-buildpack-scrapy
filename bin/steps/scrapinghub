@@ -3,9 +3,61 @@ bpwatch start sh_scrapy_install
 
 puts-step "Scrapinghub support"
 
-# Force libffi install
-pip-grep -s requirements.txt cffi &>/dev/null \
-  ||echo cffi >>requirements.txt
+# Support deprecated egg-based-deploys
+
+## Retrieve settings module from setuptools entrypoints
+_get_scrapy_settings_module() {
+  python <<!
+import pkg_resources
+ws = pkg_resources.WorkingSet(entries=['__main__.egg'])
+for ep in ws.iter_entry_points('scrapy', 'settings'):
+  print(ep.module_name)
+  break
+!
+}
+## Convert eggs to wheel format
+_egg2whl() {
+  local egg=$1 niceegg md5
+  md5=$(md5sum $egg)
+  niceegg=$(basename $egg .egg |sed -r 's/_+/_/g')-0:${md5:0:8}-py2.egg
+  ln -s $egg $niceegg
+  wheel convert $niceegg
+}
+
+if [[ -f __main__.egg ]]; then
+  # Convert eggs to wheel format suitable for pip install
+  python -m pip install wheel==0.24.0 |cleanup |indent
+  for egg in *.egg; do
+    _egg2whl $egg
+  done
+  ls -1 *.whl >requirements.txt
+
+  # install base packages
+  wget -qcO $CACHE_DIR/wheelhouse.tar http://static.scrapinghub.com/builder/wheelhouse-python-2.7.8-2.tar
+  rm -rf $CACHE_DIR/wheelhouse/
+  tar xf $CACHE_DIR/wheelhouse.tar -C $CACHE_DIR
+  cat >>requirements.txt <<!
+--use-wheel
+--no-index
+--find-links=$CACHE_DIR/wheelhouse/
+!
+  for whl in $CACHE_DIR/wheelhouse/*.whl; do
+    pkgname=$(basename $whl |cut -d- -f1)
+    echo $pkgname >>requirements.txt
+  done
+
+  # Create scrapy.cfg if it doesn't exists
+  if [[ ! -f scrapy.cfg ]]; then
+    cat >scrapy.cfg <<!
+[settings]
+default = $(_get_scrapy_settings_module)
+!
+  fi
+else
+  # Force libffi install
+  pip-grep -s requirements.txt cffi &>/dev/null \
+    ||echo cffi >>requirements.txt
+fi
 
 # Require scrapinghub wrapper for scrapy spiders
 pip-grep -s requirements.txt sh_scrapy &>/dev/null \

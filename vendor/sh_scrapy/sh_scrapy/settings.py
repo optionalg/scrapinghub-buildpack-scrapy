@@ -1,6 +1,8 @@
-import sys, os, tempfile, json
+import sys, os, tempfile
 from scrapy.utils.project import get_project_settings
 from scrapy.settings.default_settings import EXTENSIONS_BASE, SPIDER_MIDDLEWARES_BASE
+
+from .env import decode_uri
 
 
 def _update_settings(o, d):
@@ -42,7 +44,7 @@ def _populate_settings_base(defaults_func, spider=None):
     settings = get_project_settings()
     s, o = settings, settings.overrides
 
-    apisettings = json.load(open(os.getenv('JOB_SETTINGS'), 'rb'))
+    apisettings = decode_uri(envvar='JOB_SETTINGS')
 
     defaults_func(o)
     _load_addons(apisettings['enabled_addons'], s, o)

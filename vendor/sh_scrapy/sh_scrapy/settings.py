@@ -41,19 +41,19 @@ def _load_addons(addons, s, o):
 
 def _populate_settings_base(defaults_func, spider=None):
     assert 'scrapy.conf' not in sys.modules, "Scrapy settings already loaded"
-    settings = get_project_settings()
-    s, o = settings, settings.overrides
+    s = get_project_settings()
+    o = {}
 
     apisettings = decode_uri(envvar='JOB_SETTINGS')
-
     defaults_func(o)
     _load_addons(apisettings['enabled_addons'], s, o)
     _update_settings(o, apisettings['project_settings'])
     if spider:
         _update_settings(o, apisettings['spider_settings'])
         _maybe_load_autoscraping_project(s, o)
-        settings.overrides['JOBDIR'] = tempfile.mkdtemp(prefix='jobdata-')
-    return settings
+        o['JOBDIR'] = tempfile.mkdtemp(prefix='jobdata-')
+    s.setdict(o, priority='cmdline')
+    return s
 
 
 def _load_default_settings(o):
